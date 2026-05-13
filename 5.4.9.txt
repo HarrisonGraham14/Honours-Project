@@ -1,0 +1,83 @@
+    @staticmethod
+    def compose(X, Y): # assumes forms are primitive positive definite
+
+        # following Cohen Algorithm 5.4.9 (pg 244)
+        # step 1
+        if X.a > Y.a:
+            X, Y = Y, X
+        s = (X.b + Y.b) // 2
+        n = Y.b - s
+
+        # step 2
+        u, v, d = extendedEuclid(Y.a, X.a)
+        if s % d == 0:
+            A = -u * n
+            d1 = d
+            X.a //= d
+            Y.a //= d
+            s //= d    
+
+        # step 3
+        else:
+            u1, v1, d1 = extendedEuclid(s, d)
+            if d1 > 1:
+                X.a //= d1
+                Y.a //= d1
+                s //= d1
+                d //= d1
+
+            # step 4
+            l = -u1 * (u * (X.c % d) + v * (Y.c % d)) % d
+            A = -u * (n // d) + l * (X.a // d)
+
+        # step 5
+        A = A % X.a
+        A1 = X.a - A
+        if A1 < A:
+            A = -A1
+            
+        # PARTEUCL
+        v = 0
+        d = X.a
+        v2 = 1
+        v3 = A
+        z = 0
+        L = int(pow(abs(pow(X.b, 2)/4 - X.a * X.c), 1/4))
+        while abs(v3) > L:
+            q = d // v3
+            t3 = d % v3
+            t2 = v - q * v2
+            v = v2
+            d = v3
+            v2 = t2
+            v3 = t3
+            z = z + 1   
+        if z % 2 == 1:
+            v2 = -v2
+            v3 = -v3
+        
+        # step 6
+        if z == 0:
+            Q1 = Y.a * v3
+            Q2 = Q1 + n
+            f = Q2 // d
+            g = (v3 * s + Y.c) // d
+            Z = QuadForm(d * Y.a, 2 * Q1 + Y.b, v3 * d + g * d1)
+            Z.reduce()
+            return Z
+        
+        # step 7
+        b = (Y.a * d + n * v) // Y.a
+        Q1 = b * v3
+        Q2 = Q1 + n
+        f = Q2 / d
+        e = (s * d + Y.c * v) // X.a
+        Q3 = e * v2
+        Q4 = Q3 - s
+        g = Q4 / v
+        if d1 > 1:
+            v2 = d1 * v2
+            v = d1 * v
+        Z = QuadForm(d * b + e * v, Q1 + Q2 + d1 * (Q3 + Q4), v3 * f + g * v2)
+        Z.reduce() 
+        return Z
